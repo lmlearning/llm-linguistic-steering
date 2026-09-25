@@ -1,3 +1,4 @@
+from answer_parsing import extract_answer_letter
 """
 ARC-Challenge pilot experiment for cross-benchmark validation.
 
@@ -111,41 +112,13 @@ Choices:
     return prompt_content
 
 # --- API Prediction Functions ---
-def extract_answer_letter(content: str, num_choices: int = 4) -> str:
-    """
-    Extracts the final answer letter from a model's response.
-    Supports A-E for ARC questions with up to 5 choices.
-    """
-    max_letter = chr(64 + num_choices)  # e.g., 'D' for 4 choices, 'E' for 5
-    pattern = f'[A-{max_letter}]'
-
-    # 1. Strip away <think> blocks
-    cleaned_content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
-
-    # 2. Check for \boxed{} answer
-    match = re.search(rf'\\boxed{{\s*({pattern})\s*}}', cleaned_content, re.IGNORECASE)
-    if match:
-        return match.group(1).upper()
-
-    # 3. Check for letter on a line by itself (from end)
-    lines = cleaned_content.strip().split('\n')
-    for line in reversed(lines):
-        line = line.strip()
-        if re.fullmatch(pattern, line, re.IGNORECASE):
-            return line.upper()
-
-    # 4. Last occurrence of a valid letter
-    all_matches = re.findall(pattern, cleaned_content.upper())
-    if all_matches:
-        return all_matches[-1]
-
-    return "Z"
 
 async def get_openai_prediction(
     prompt_content: str,
     client: AsyncOpenAI,
     model_name: str,
-    semaphore: asyncio.Semaphore
+    semaphore: asyncio.Semaphore,
+    num_choices: int = 4,
 ) -> str:
     """Gets a prediction from an OpenAI-compatible endpoint."""
     async with semaphore:
@@ -159,7 +132,7 @@ async def get_openai_prediction(
             )
             content = response.choices[0].message.content
             logging.debug(f"API Response: {content[:200]}")
-            return extract_answer_letter(content)
+            return extract_answer_letter(content, num_choices=num_choices)
 
         except RateLimitError:
             logging.warning("Rate limit reached. Sleeping for 20 seconds.")
@@ -199,7 +172,10 @@ async def calculate_shap_for_question(
     for coalition_vec in coalitions:
         active_adjectives = [adj for adj, active in zip(adjectives, coalition_vec) if active]
         prompt_content = format_prompt_content(question_data, active_adjectives)
-        tasks.append(prediction_function(prompt_content, client, model_name, semaphore))
+        tasks.append(prediction_function(
+            prompt_content, client, model_name, semaphore,
+            num_choices=question_data.get('num_choices', len(question_data['choices'])),
+        ))
 
     predictions = await asyncio.gather(*tasks)
 

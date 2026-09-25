@@ -1,3 +1,4 @@
+from answer_parsing import extract_answer_letter
 import argparse
 import json
 import logging
@@ -84,37 +85,6 @@ Choices:
     return prompt_content
 
 # --- API Prediction Functions ---
-def extract_answer_letter(content: str) -> str:
-    """
-    Extracts the final answer letter (A-D) from a model's response,
-    handling various formats like reasoning blocks and LaTeX.
-    """
-    # 1. Strip away DeepSeek's <think> blocks to ignore the reasoning part.
-    # The re.DOTALL flag allows '.' to match newlines.
-    cleaned_content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
-
-    # 2. Prioritize a LaTeX \boxed{} answer, as it's a very strong signal.
-    match = re.search(r'\\boxed{\s*([A-D])\s*}', cleaned_content, re.IGNORECASE)
-    if match:
-        return match.group(1).upper()
-
-    # 3. Prioritize finding a letter that is on a line by itself,
-    # checking from the end of the response backwards.
-    lines = cleaned_content.strip().split('\n')
-    for line in reversed(lines):
-        line = line.strip()
-        # Check if the entire line is just a single letter from A-D.
-        if re.fullmatch(r'[A-D]', line, re.IGNORECASE):
-            return line.upper()
-
-    # 4. As a fallback, find the *last* occurrence of a letter A-D in the
-    # cleaned content. This is more robust than finding the first one.
-    all_matches = re.findall(r'[A-D]', cleaned_content.upper())
-    if all_matches:
-        return all_matches[-1]
-
-    # 5. If no valid answer is found after all checks, return a failure code.
-    return "Z"
 
 async def get_openai_prediction(
     prompt_content: str, 

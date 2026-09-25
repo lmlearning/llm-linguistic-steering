@@ -41,6 +41,18 @@ reference adjectives are used only when present in the supplied results. Each
 including summary JSON, Markdown and PNG outputs, with and without question-level
 data. They do not run model inference or regenerate the published experiments.
 
+## Answer extraction for new experiments
+
+Both estimation scripts use `answer_parsing.py`. It accepts explicit letter-only,
+answer/choice lines and LaTeX boxed answers, ignores `<think>` blocks and returns
+the existing `Z` failure marker for prose, refusals or ambiguous responses. ARC
+passes each question's choice count through to the parser, including five-choice
+questions. Ordinary letters inside words are never treated as answers.
+
+This changes the scoring protocol for newly generated results. Existing dashboard
+exports are retained; regenerate an experiment before comparing results produced
+with different parser versions.
+
 ## License
 
 See [LICENSE](LICENSE).
