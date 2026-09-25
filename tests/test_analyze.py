@@ -1,4 +1,7 @@
 import json
+import subprocess
+import sys
+from pathlib import Path
 
 import matplotlib
 matplotlib.use("Agg")
@@ -45,3 +48,11 @@ def test_custom_vocabulary_generates_complete_analysis(tmp_path, monkeypatch, wi
         assert plt.get_fignums() == []
     finally:
         plt.close("all")
+
+
+def test_missing_input_exits_unsuccessfully(tmp_path):
+    script = Path(__file__).resolve().parents[1] / "analyze.py"
+    result = subprocess.run([sys.executable, str(script), str(tmp_path / "missing.json")], capture_output=True, text=True)
+    assert result.returncode == 1
+    assert "Input file not found" in result.stderr
+    assert "Traceback" not in result.stderr

@@ -20,3 +20,4 @@ jobs:
           python-version: '3.11'
       - run: python -m pip install pytest -r requirements-analysis.txt
       - run: python -m pytest -q tests
+      - run: python analyze.py examples/demo_results.json --output-dir output/demo

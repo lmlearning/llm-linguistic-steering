@@ -28,14 +28,13 @@ def create_subject_groups():
                          "professional_law", "professional_medicine"]
     }
 
-def analyze_and_visualize_complete(input_path: str):
+def analyze_and_visualize_complete(input_path: str, output_dir=None):
     """
     Loads experimental data, performs a full analysis (basic and advanced), 
     and generates a summary JSON, a Markdown table, and multiple plots.
     """
     if not os.path.exists(input_path):
-        print(f"Error: Input file not found at '{input_path}'")
-        return
+        raise FileNotFoundError(f"Input file not found at '{input_path}'")
 
     print(f"Loading data from {input_path}...")
     with open(input_path, 'r') as f:
@@ -43,7 +42,7 @@ def analyze_and_visualize_complete(input_path: str):
     
     # Create output directory based on input filename
     base_name = os.path.splitext(os.path.basename(input_path))[0]
-    output_dir = f"{base_name}_analysis"
+    output_dir = output_dir or f"{base_name}_analysis"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     print(f"Outputs will be saved to '{output_dir}/'")
@@ -139,7 +138,7 @@ def analyze_and_visualize_complete(input_path: str):
     # Plot 2: Top Adjectives by Mean Absolute Shapley Value
     plt.figure(figsize=(12, 10))
     abs_plot_df = agg_df.sort_values('mean_abs_shapley', ascending=False).head(20)
-    sns.barplot(x='mean_abs_shapley', y='adjective', data=abs_plot_df, palette='viridis_r')
+    sns.barplot(x='mean_abs_shapley', y='adjective', hue='adjective', data=abs_plot_df, palette='viridis_r', legend=False)
     plt.title('Top 20 Most Influential Adjectives (Magnitude of Steering)', fontsize=16, pad=20)
     plt.xlabel('Mean Absolute Shapley Value (Overall Impact)', fontsize=12)
     plt.ylabel('Adjective', fontsize=12)
@@ -196,7 +195,7 @@ def analyze_and_visualize_complete(input_path: str):
         group_df = pd.DataFrame(sorted(mean_group_sensitivity.items(), key=lambda x: x[1], reverse=True),
                                 columns=['Domain', 'Sensitivity'])
         plt.figure(figsize=(10, 7))
-        sns.barplot(x='Sensitivity', y='Domain', data=group_df, palette='magma')
+        sns.barplot(x='Sensitivity', y='Domain', hue='Domain', data=group_df, palette='magma', legend=False)
         plt.title('Sensitivity to Adjectival Steering by Academic Domain', fontsize=16, pad=20)
         plt.xlabel('Average Steering Magnitude (Sum of Abs. Shapley Values)', fontsize=12)
         plt.ylabel('Domain', fontsize=12)
@@ -225,6 +224,10 @@ def analyze_and_visualize_complete(input_path: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyze Shapley value results from an LLM experiment.")
     parser.add_argument("input_file", type=str, help="Path to the input JSON file (e.g., o3_corrected.json).")
+    parser.add_argument("--output-dir", help="Directory for the generated report (default: INPUT_analysis)")
     args = parser.parse_args()
     
-    analyze_and_visualize_complete(args.input_file)
+    try:
+        analyze_and_visualize_complete(args.input_file, args.output_dir)
+    except (OSError, ValueError, KeyError) as error:
+        parser.exit(1, f"Analysis failed: {error}\n")
