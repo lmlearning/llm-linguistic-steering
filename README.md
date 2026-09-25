@@ -27,6 +27,20 @@ It imports pandas, NumPy, Matplotlib and seaborn. Review its expected input stru
 
 This is an experimental research collection. Individual scripts may require experiment-specific inputs and path configuration.
 
+## Analysis dependencies and regression tests
+
+```bash
+python -m pip install -r requirements-analysis.txt pytest
+python -m pytest tests
+```
+
+The analysis accepts custom adjective vocabularies: optional plot annotations and
+reference adjectives are used only when present in the supplied results. Each
+`per_question_results` vector must follow the order of the keys in
+`adjective_mapping`. The tests render the complete analysis with a small vocabulary,
+including summary JSON, Markdown and PNG outputs, with and without question-level
+data. They do not run model inference or regenerate the published experiments.
+
 ## License
 
 See [LICENSE](LICENSE).

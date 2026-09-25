@@ -168,9 +168,8 @@ def analyze_and_visualize_complete(input_path: str):
     plt.axvline(median_std, color='grey', linestyle='--', lw=1.5)
     
     annotations = ['active', 'academic', 'plain', 'bold', 'zany', 'flawless', 'clear', 'useful', 'formal', 'scientific']
-    for adj in annotations:
-        row = agg_df[agg_df['adjective'] == adj].iloc[0]
-        plt.text(row['std_shapley'] * 1.05, row['mean_shapley'], adj, fontsize=11, weight='bold')
+    for _, row in agg_df[agg_df['adjective'].isin(annotations)].iterrows():
+        plt.text(row['std_shapley'] * 1.05, row['mean_shapley'], row['adjective'], fontsize=11, weight='bold')
 
     plt.title('Adjective Steering Profile: Direction vs. Volatility', fontsize=18, pad=20)
     plt.xlabel('Volatility (Standard Deviation of Shapley Value)', fontsize=14)
@@ -209,6 +208,7 @@ def analyze_and_visualize_complete(input_path: str):
     if not correlation_matrix.empty:
         interesting_adjectives = sorted(list(set(agg_df.nlargest(15, 'mean_abs_shapley')['adjective'].tolist() + 
                                                ['academic', 'scientific', 'simple', 'complex', 'brief', 'thorough'])))
+        interesting_adjectives = [adj for adj in interesting_adjectives if adj in correlation_matrix.index]
         corr_subset = correlation_matrix.loc[interesting_adjectives, interesting_adjectives]
         
         plt.figure(figsize=(16, 14))
