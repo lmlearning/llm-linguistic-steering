@@ -1,4 +1,4 @@
-# Linguistic Steering
+# Linguistic Steering in Large Language Models
 
 Research scripts and dashboards for exploring **how linguistic choices affect language-model behaviour**, including Shapley-value attribution, cross-benchmark comparisons and variance analysis.
 
